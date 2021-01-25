@@ -1,5 +1,5 @@
-DataLad extension template
-**************************
+MIH's extra DataLad functionality
+*********************************
 
 This is a template for creating a `DataLad <http://datalad.org>`__ extension
 that equips DataLad with additional functionality.
@@ -15,7 +15,7 @@ High-level API commands
 .. autosummary::
    :toctree: generated
 
-   hello_cmd
+   x_configuration
 
 
 Command line reference
@@ -24,7 +24,7 @@ Command line reference
 .. toctree::
    :maxdepth: 1
 
-   generated/man/datalad-hello-cmd
+   generated/man/datalad-x-configuration
 
 
 Indices and tables
