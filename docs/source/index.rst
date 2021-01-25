@@ -16,6 +16,7 @@ High-level API commands
    :toctree: generated
 
    x_configuration
+   x_snakemake
 
 
 Command line reference
@@ -25,6 +26,7 @@ Command line reference
    :maxdepth: 1
 
    generated/man/datalad-x-configuration
+   generated/man/datalad-x-snakemake
 
 
 Indices and tables

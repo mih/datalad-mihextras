@@ -1,4 +1,4 @@
-"""DataLad demo extension"""
+"""MIH's DataLad extension"""
 
 __docformat__ = 'restructuredtext'
 
@@ -7,7 +7,7 @@ __docformat__ = 'restructuredtext'
 # to be found by datalad
 command_suite = (
     # description of the command suite, displayed in cmdline help
-    "Demo DataLad command suite",
+    "MIH's DataLad extras",
     [
         # specification of a command, any number of commands can be defined
         (
@@ -15,6 +15,12 @@ command_suite = (
             'Configuration',
             'x-configuration',
             'x_configuration'
+        ),
+        (
+            'datalad_mihextras.snakemake',
+            'SnakeMake',
+            'x-snakemake',
+            'x_snakemake'
         ),
     ]
 )
