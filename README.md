@@ -5,7 +5,7 @@
 DataLad extension with special interest functionality or drafts of future
 additions to DataLad proper.
 
-There is a staging area to test-drive new functionality in the wild without
+This is a staging area to test-drive new functionality in the wild without
 making any promises on longevity or stability. Once a certain level of maturity
 has been reached, most functionality will move to more appropriate places, like
 topical extensions or even DataLad proper.
