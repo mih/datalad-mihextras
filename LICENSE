@@ -1,11 +1,11 @@
 # Main Copyright/License
 
-DataLad, including all examples, code snippets and attached
+The DataLad extension, including all examples, code snippets and attached
 documentation is covered by the MIT license.
 
   The MIT License
 
-  Copyright (c) 2018-     DataLad Team
+  Copyright (c) 2021-     Michael Hanke
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -24,5 +24,3 @@ documentation is covered by the MIT license.
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
-
-See CONTRIBUTORS file for a full list of contributors.
