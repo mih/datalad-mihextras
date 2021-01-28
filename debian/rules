@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=datalad-mihextras
+# cannot do testing with just built version since that one does not register entry points
+export PYBUILD_DISABLE=test
+
+export DATALAD_TESTS_NONETWORK = 1
+
+PY3VERSIONS=$(shell py3versions -vr)
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild

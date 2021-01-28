@@ -1,0 +1,2 @@
+# ignore auto-changes from versioneer
+extend-diff-ignore = "(^|/)datalad_mihextras/_version.py$"
