@@ -23,10 +23,10 @@ from datalad.interface.base import (
     Interface,
     build_doc,
 )
-from datalad.interface.common_opts import (
-    recursion_limit,
-    recursion_flag,
-)
+# from datalad.interface.common_opts import (
+#     recursion_limit,
+#     recursion_flag,
+# )
 from datalad.interface.results import (
     annexjson2result,
     get_status_dict,
@@ -68,8 +68,8 @@ class ExportToWEBDAV(Interface):
             metavar='URL',
             doc="""url of the WEBDAV service""",
             constraints=EnsureStr() | EnsureNone()),
-        recursive=recursion_flag,
-        recursion_limit=recursion_limit,
+        # recursive=recursion_flag,
+        # recursion_limit=recursion_limit,
     )
 
     @staticmethod
@@ -78,9 +78,9 @@ class ExportToWEBDAV(Interface):
     def __call__(
             to,
             url=None,
-            dataset=None,
-            recursive=False,
-            recursion_limit=None):
+            dataset=None):
+            # recursive=False,
+            # recursion_limit=None
 
         ds = require_dataset(
             dataset,
