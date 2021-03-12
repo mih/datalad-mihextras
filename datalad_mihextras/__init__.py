@@ -17,6 +17,12 @@ command_suite = (
             'x_configuration'
         ),
         (
+            'datalad_mihextras.export_to_webdav',
+            'ExportToWEBDAV',
+            'x-export-to-webdav',
+            'x_export_to_webdav'
+        ),
+        (
             'datalad_mihextras.snakemake',
             'SnakeMake',
             'x-snakemake',
