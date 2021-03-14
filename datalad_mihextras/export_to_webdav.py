@@ -203,7 +203,9 @@ def get_credentials(name, url, allow_interactive=True):
     # same service for different datasets
     # but otherwise we would need one set of stored credentials per each
     # dataset
-    name = URL(url).hostname
+    # sanitize names, to have them be potential environment variable names
+    # https://github.com/datalad/datalad/issues/5495
+    name = URL(url).hostname.replace('.', '_').replace('-', '_')
     spec = dict(user='WEBDAV_USERNAME', password='WEBDAV_PASSWORD')
 
     # prefer the environment
