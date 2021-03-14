@@ -164,7 +164,8 @@ class ExportToWEBDAV(Interface):
                         res.pop('file')
                     res = annexjson2result(res, **res_kwargs)
                     res['action'] = res_kwargs['action']
-                yield res
+                    res['type'] = 'file'
+                    yield res
         except CommandError as e:
             print(e)
             for res in e.kwargs.get('stdout_json', []):
@@ -172,6 +173,7 @@ class ExportToWEBDAV(Interface):
                 if res.get('file', False) is None:
                     res.pop('file')
                 res['action'] = res_kwargs['action']
+                res['type'] = 'file'
                 yield annexjson2result(res, **res_kwargs)
             yield get_status_dict(
                 status='error',
