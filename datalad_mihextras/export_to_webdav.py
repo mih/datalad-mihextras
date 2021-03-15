@@ -52,7 +52,6 @@ lgr = logging.getLogger('datalad.mihextras.export_to_webdav')
 
 @build_doc
 class ExportToWEBDAV(Interface):
-
     _params_ = dict(
         dataset=Parameter(
             args=("-d", "--dataset"),
@@ -92,6 +91,12 @@ class ExportToWEBDAV(Interface):
             logger=lgr,
             ds=ds,
         )
+        from datalad.support.external_versions import external_versions as exv
+        annex_version = exv['cmd:annex']
+        if not annex_version > '8.20210311':
+            lgr.warn(
+                'git-annex version is too old, some features will not work. '
+                'Need 8.20210312 or later.')
 
         dsrepo = ds.repo
 
