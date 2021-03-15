@@ -66,7 +66,9 @@ environment:
       APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu2004
       INSTALL_SYSPKGS: python3-virtualenv
       # system git-annex is way too old, use better one
-      INSTALL_GITANNEX: git-annex -m deb-url --url http://store.datalad.org/git-annex/debian/git-annex_8.20201127-1_amd64.deb
+      #INSTALL_GITANNEX: git-annex -m deb-url --url http://store.datalad.org/git-annex/debian/git-annex_8.20201127-1_amd64.deb
+      # we need fixes made after the 8.20210311 release
+      INSTALL_GITANNEX: git-annex -m autobuild
     # Windows core tests
     - ID: WinP39core
       # ~35 min
@@ -158,6 +160,8 @@ install:
   # deploy git-annex, if desired
   - cmd: IF DEFINED INSTALL_GITANNEX datalad-installer --sudo ok %INSTALL_GITANNEX%
   - sh: "[ -n \"${INSTALL_GITANNEX}\" ] && datalad-installer --sudo ok ${INSTALL_GITANNEX}"
+  # add location of datalad installer results to PATH
+  - sh: export PATH=$(dirname ${TMPDIR}/dl-build*/git-annex*/git-annex):$PATH
 
 
 #before_build:
