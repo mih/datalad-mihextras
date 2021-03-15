@@ -30,6 +30,8 @@ from datalad.tests.utils import (
 
 from datalad.distribution.dataset import Dataset
 from datalad_mihextras import export_to_webdav
+from datalad.support.external_versions import external_versions as exv
+annex_version = exv['cmd:annex']
 
 
 _dataset_config_template = {
@@ -74,7 +76,9 @@ def test_something(src, dst):
     try:
         _test_basic_export(webdav, ds, webdav_url)
         _test_repeated_export(webdav, ds)
-        _test_subds_exclusion(webdav, ds)
+        if annex_version > '8.20210311':
+            # older versions did not exclude subdatasets
+            _test_subds_exclusion(webdav, ds)
         _test_retrieval(webdav, ds)
     finally:
         cleanup_webdav(webdav, ds.id)
@@ -99,12 +103,14 @@ def _test_repeated_export(webdav, ds):
     ds.save()
     # the updated file is exported
     res = ds.x_export_to_webdav(to='webdav')
-    assert_in_results(
-        res,
-        path=str(annexfile_pathobj),
-        status='ok',
-        type='file',
-    )
+    if annex_version > '8.20210311':
+        # older versions did not set the file property
+        assert_in_results(
+            res,
+            path=str(annexfile_pathobj),
+            status='ok',
+            type='file',
+        )
 
 
 def _test_subds_exclusion(webdav, ds):
