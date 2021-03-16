@@ -56,10 +56,10 @@ webdav_url_tmpl = '%s/%s/{id}' % (
 
 def cleanup_webdav(webdav, dsid):
     try:
-        webdav.clean('datalad-tester/{}'.format(dsid))
+        webdav.clean(dsid)
     except webdav_exc.RemoteResourceNotFound:
         # that is what we wanted to achieve
-        pass
+        print("HELP! CANNOT CLEAN UP!")
 
 
 @with_tree(tree=_dataset_config_template)
