@@ -38,7 +38,10 @@ _dataset_config_template = {
     'ingit.txt': 'ingit',
     'subdir': {
         'inannex.txt': 'inannex'
-    }
+    },
+    'sub dir2': {
+        'inannex2.txt': 'inannex2'
+    },
 }
 
 webdav_cfg = dict(
@@ -76,10 +79,10 @@ def test_something(src, dst):
     try:
         _test_basic_export(webdav, ds, webdav_url)
         _test_repeated_export(webdav, ds)
+        _test_retrieval(webdav, ds)
         if annex_version > '8.20210311':
             # older versions did not exclude subdatasets
-            _test_subds_exclusion(webdav, ds)
-        _test_retrieval(webdav, ds)
+            _test_recursive_export(webdav, ds)
     finally:
         cleanup_webdav(webdav, ds.id)
 
@@ -113,12 +116,6 @@ def _test_repeated_export(webdav, ds):
         )
 
 
-def _test_subds_exclusion(webdav, ds):
-    ds.create('subds')
-    ds.x_export_to_webdav(to='webdav')
-    assert_not_in('subds', webdav.list(ds.id))
-
-
 def _test_retrieval(webdav, ds):
     annexfile_pathobj = ds.pathobj / 'subdir' / 'inannex.txt'
     ds.drop(annexfile_pathobj)
@@ -137,3 +134,24 @@ def _test_retrieval(webdav, ds):
         path=str(annexfile_pathobj),
         has_content=True,
     )
+
+
+def _test_recursive_export(webdav, ds):
+    # create a subdataset
+    subds = ds.create(ds.pathobj / 'sub dir2' / 'subds')
+    # re-export
+    ds.x_export_to_webdav(to='webdav')
+    # must not contain a block for a later nested subds export
+    assert_not_in('subds', webdav.list('{}/sub dir2'.format(ds.id)))
+
+    res = ds.x_export_to_webdav(to='webdav', recursive=True)
+    # subdataset was published
+    assert_in_results(res, path=subds.path, status='ok', type='dataset')
+    # with content
+    assert_in_results(res, path=str(subds.pathobj / '.datalad' / 'config'),
+                      status='ok', type='file')
+    # confirm on webdav
+    assert_in('config', webdav.list('{}/{}'.format(
+        ds.id,
+        str((subds.pathobj / '.datalad').relative_to(ds.pathobj))
+    )))
