@@ -17,6 +17,7 @@ from pathlib import Path
 
 from datalad.tests.utils import (
     assert_in,
+    assert_not_in_results,
     assert_in_results,
     assert_not_in,
     assert_raises,
@@ -114,6 +115,15 @@ def _test_repeated_export(webdav, ds):
             status='ok',
             type='file',
         )
+    # delete something remote without git-annex knowing
+    webdav.clean('{}/subdir'.format(ds.id))
+    # default mode of operation will miss this, and will not
+    # reupload
+    ds.x_export_to_webdav(to='webdav')
+    assert_not_in('subdir', webdav.list(ds.id))
+    # but we can make it test for that
+    ds.x_export_to_webdav(to='webdav', mode='verify')
+    assert_in('inannex.txt', webdav.list('{}/subdir'.format(ds.id)))
 
 
 def _test_retrieval(webdav, ds):

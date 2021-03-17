@@ -46,6 +46,7 @@ from datalad.support.param import Parameter
 from datalad.support.constraints import (
     EnsureNone,
     EnsureStr,
+    EnsureChoice,
 )
 from datalad.downloaders.credentials import UserPassword
 from datalad import ui
@@ -72,6 +73,16 @@ class ExportToWEBDAV(Interface):
             metavar='URL',
             doc="""url of the WEBDAV service""",
             constraints=EnsureStr() | EnsureNone()),
+        mode=Parameter(
+            args=("--mode",),
+            doc="""on repeated exports, git-annex relies on local
+            knowledge which content was previously exported, and will only
+            upload changes ('auto'); when content was modified independently
+            at the export site this can lead to omissions, and a verification
+            of file existence can be perform prior export ('verify') as a
+            mitigation (this verification is not able to detect remote
+            content changes).""",
+            constraints=EnsureChoice('auto', 'verify')),
         recursive=recursion_flag,
         recursion_limit=recursion_limit,
     )
@@ -82,6 +93,7 @@ class ExportToWEBDAV(Interface):
     def __call__(
             to,
             url=None,
+            mode='auto',
             dataset=None,
             recursive=False,
             recursion_limit=None):
@@ -120,12 +132,18 @@ class ExportToWEBDAV(Interface):
             if webdav_baseurl is None:
                 dsurl = url
             else:
+                # this branch is entered from the second processed
+                # dataset on
                 dsurl = urljoin(
                     webdav_baseurl,
                     urlquote(d.pathobj.relative_to(ds.pathobj).as_posix()),
                 )
             try:
-                for res in export_to_webdav(d, to, dsurl):
+                for res in export_to_webdav(
+                        d,
+                        to,
+                        url=dsurl,
+                        mode=mode):
                     if webdav_baseurl is None and 'webdav_url' in res:
                         webdav_baseurl = res['webdav_url']
                         if not webdav_baseurl.endswith('/'):
@@ -142,9 +160,12 @@ class ExportToWEBDAV(Interface):
                     **res_kwargs)
 
 
-def export_to_webdav(ds, to, url=None):
+def export_to_webdav(ds, to, url=None, mode='auto'):
     """ """
     repo = ds.repo
+    export_treeish = repo.get_hexsha()
+    if export_treeish is None:
+        raise ValueError('No saved dataset state found')
 
     known_special_remotes = repo.get_special_remotes()
     if to is None:
@@ -193,6 +214,37 @@ def export_to_webdav(ds, to, url=None):
                     to, msr.get('url')))
         # for getting credentials
         url = msr.get('url')
+
+        if mode == 'verify':
+            # inspect the availability of keys relevant for the export
+            # at the remote
+            try:
+                lgr.debug('Perform annex fsck on export target %s', to)
+                for res in repo.call_annex_records([
+                        'fsck',
+                        # only check presence
+                        '--fast',
+                        '--branch', export_treeish,
+                        '--from', to]):
+                    # we are not much interested in when things are as expected
+                    lgr.debug('%s', res)
+            except CommandError as e:
+                for res in e.kwargs.get('stdout_json', []):
+                    if res.get('success'):
+                        # nothing to say about the good ones
+                        continue
+                    # no need to warn, we are doing the check to avoid the
+                    # unexpected
+                    lgr.info(
+                        '%s: %s',
+                        # should be 'fixing location log', but if not
+                        # say who is talking
+                        res.get('note', 'git-annex'),
+                        ' '.join(m.strip(' *')
+                                 # should say which key in errors
+                                 # but if not dump everything
+                                 for m in res.get('error-messages', [res]))
+                    )
     else:
         if not url:
             raise ValueError(
@@ -200,8 +252,6 @@ def export_to_webdav(ds, to, url=None):
                 "and no URL provided".format(to))
         creds = get_credentials(to, url)
         _init_remote(repo, to, url, creds)
-
-    export_treeish = repo.get_hexsha()
 
     return_props = dict(
         webdav_url=url,
