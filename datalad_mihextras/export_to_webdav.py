@@ -58,6 +58,52 @@ lgr = logging.getLogger('datalad.mihextras.export_to_webdav')
 
 @build_doc
 class ExportToWEBDAV(Interface):
+    """Export a dataset to a WEBDAV server
+
+    WEBDAV is standard HTTP protocol extension for placing files on a server
+    that is supported by a number of commericial storage services (e.g.
+    4shared.com, box.com), but also instances of cloud-storage solutions like
+    Nextcloud or ownCloud. This command is a frontend for git-annex's export
+    functionality that can synchronize a remote WEBDAV target with a particular
+    state of a local dataset. It does not expose all of git-annex's
+    capabilities, such as transparent encryption, but aims to facilitate the
+    use case of sharing the latest saved state of a (nested) dataset with
+    non-DataLad users via a common WEBDAV-enabled storage service.
+
+    For the initial export, only a name for the export WEBDAV target (e.g.
+    'myowncloud') and a URL for the WEBDAV server are required.  An optional
+    path component of the URL will determine the placement of the export in the
+    directory hierarchy on the server. For example,
+    'https://webdav.example.com/datasets/one' will place the root of the
+    dataset export in directory 'datasets/one' on the server. It is recommended
+    to place datasets into dedicated subdirectories on the server.
+
+    Subsequent exports do not require a re-specification of a URL, the given
+    name is sufficient. In case only a single WEBDAV export is configured,
+    no parameter is needed at all.
+
+    When exporting recursively, subdatasets exports are placed at their
+    corresponding locations on the WEBDAV server. Matching export
+    configurations are generated automatically based on the superdataset's
+    configuration.
+
+    .. note::
+      This command needs git-annex 8.20210312 (or later).
+
+    .. seealso::
+
+      https://git-annex.branchable.com/git-annex-export
+        Documentation on git-annex export
+    """
+    _examples_ = [
+        dict(text="Export a single dataset to 4shared.com",
+             code_py="x_export_to_webdav('4shared', url='https://webdav.4shared.com/myds')",
+             code_cmd="datalad x-export-to-webdav 4shared --url https://webdav.4shared.com/myds"),
+        dict(text='Recursively export nested datasets into a single directory tree in a box.com account',
+             code_py="x_export_to_webdav('box', recursive=True, url='https://dav.box.com/dav/myds')",
+             code_cmd="datalad x-export-to-webdav box -r --url https://dav.box.com/dav/myds"),
+    ]
+
     _params_ = dict(
         dataset=Parameter(
             args=("-d", "--dataset"),
