@@ -1,6 +1,6 @@
 # MIH's extra DataLad functionality
 
-[![Build status](https://ci.appveyor.com/api/projects/status/f65qpwkv2rueii1d/branch/master?svg=true)](https://ci.appveyor.com/project/mih/datalad-mihextras/branch/master) [![codecov.io](https://codecov.io/github/datalad/mih/datalad-mihextras/coverage.svg?branch=master)](https://codecov.io/github/datalad/mih/datalad-mihextras?branch=master) [![docs](https://github.com/mih/datalad-mihextras/workflows/docs/badge.svg)](https://datalad-mihextras.readthedocs.io)
+[![Build status](https://ci.appveyor.com/api/projects/status/f65qpwkv2rueii1d/branch/master?svg=true)](https://ci.appveyor.com/project/mih/datalad-mihextras/branch/master) [![codecov.io](https://codecov.io/github/mih/datalad-mihextras/coverage.svg?branch=master)](https://codecov.io/github/mih/datalad-mihextras?branch=master) [![docs](https://github.com/mih/datalad-mihextras/workflows/docs/badge.svg)](https://datalad-mihextras.readthedocs.io)
 
 DataLad extension with special interest functionality or drafts of future
 additions to DataLad proper.
