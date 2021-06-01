@@ -18,3 +18,10 @@ Command(s) provided by this extension
   service, such as Nextcloud, box.com, or 4shared.com
 - `x-snakemake` -- thin wrapper around [SnakeMake](https://snakemake.github.io)
   to obtain file content prior processing
+
+
+Dataset procedure(s) provided by this extension
+
+- `cfg_kdenlive` -- configures a dataset for use as a KDENLIVE project.
+  Manages commits of the project file to be more portable, and configures
+  a standard set of temporary directories for KDENLIVE.
