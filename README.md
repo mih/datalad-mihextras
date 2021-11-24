@@ -14,6 +14,8 @@ Command(s) provided by this extension
 
 - `x-configuration` -- manipulate dataset, dataset-clone-local, or global
   configuration, or dump an annotated list of all effective settings
+- `x-export-bagit` -- export datasets (recursively) to an RFC8493-compliant
+  BagIt "bag"
 - `x-export-to-webdav` -- export datasets (recursively) to any WEBDAV
   service, such as Nextcloud, box.com, or 4shared.com
 - `x-snakemake` -- thin wrapper around [SnakeMake](https://snakemake.github.io)

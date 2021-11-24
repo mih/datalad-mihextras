@@ -16,6 +16,7 @@ High-level API commands
    :toctree: generated
 
    x_configuration
+   x_export_bagit
    x_export_to_webdav
    x_snakemake
 
@@ -27,6 +28,7 @@ Command line reference
    :maxdepth: 1
 
    generated/man/datalad-x-configuration
+   generated/man/datalad-x-export-bagit
    generated/man/datalad-x-export-to-webdav
    generated/man/datalad-x-snakemake
 

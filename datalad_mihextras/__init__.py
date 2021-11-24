@@ -28,6 +28,12 @@ command_suite = (
             'x-snakemake',
             'x_snakemake'
         ),
+        (
+            'datalad_mihextras.export_bagit',
+            'ExportBagit',
+            'x-export-bagit',
+            'x_export_bagit'
+        ),
     ]
 )
 
