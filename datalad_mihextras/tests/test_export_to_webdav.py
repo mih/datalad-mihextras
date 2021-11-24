@@ -32,6 +32,9 @@ from datalad.tests.utils import (
 from datalad.distribution.dataset import Dataset
 from datalad_mihextras import export_to_webdav
 from datalad.support.external_versions import external_versions as exv
+
+from unittest import SkipTest
+
 annex_version = exv['cmd:annex']
 
 
@@ -45,12 +48,15 @@ _dataset_config_template = {
     },
 }
 
-webdav_cfg = dict(
-    webdav_hostname='https://dav.box.com',
-    webdav_login=environ['DATALAD_dav_box_com_user'],
-    webdav_password=environ['DATALAD_dav_box_com_password'],
-    webdav_root='dav/datalad-tester/',
-)
+try:
+    webdav_cfg = dict(
+        webdav_hostname='https://dav.box.com',
+        webdav_login=environ['DATALAD_dav_box_com_user'],
+        webdav_password=environ['DATALAD_dav_box_com_password'],
+        webdav_root='dav/datalad-tester/',
+    )
+except KeyError as e:
+    raise SkipTest(f"Need credentials to be passed via env vars. Got: {e!r}")
 
 webdav_url_tmpl = '%s/%s/{id}' % (
     webdav_cfg['webdav_hostname'],
