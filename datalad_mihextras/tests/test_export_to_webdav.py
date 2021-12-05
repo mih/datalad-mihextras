@@ -169,5 +169,5 @@ def _test_recursive_export(webdav, ds):
     # confirm on webdav
     assert_in('config', webdav.list('{}/{}'.format(
         ds.id,
-        str((subds.pathobj / '.datalad').relative_to(ds.pathobj))
+        (subds.pathobj / '.datalad').relative_to(ds.pathobj).as_posix()
     )))
