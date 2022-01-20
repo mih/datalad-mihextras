@@ -33,6 +33,25 @@ Command line reference
    generated/man/datalad-x-snakemake
 
 
+Git remote helpers
+------------------
+
+.. currentmodule:: datalad_mihextras.gitremote
+.. autosummary::
+   :toctree: generated
+
+   datalad_annex
+
+Git-annex backends
+------------------
+
+.. currentmodule:: datalad_mihextras.backend
+.. autosummary::
+   :toctree: generated
+
+   base
+   xdlra
+
 Indices and tables
 ==================
 
