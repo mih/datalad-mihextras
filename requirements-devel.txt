@@ -5,3 +5,5 @@ sphinx
 sphinx_rtd_theme
 webdavclient3
 snakemake
+# https://github.com/datalad/datalad/issues/6335
+git+https://github.com/datalad/datalad; sys_platform == "win32"
