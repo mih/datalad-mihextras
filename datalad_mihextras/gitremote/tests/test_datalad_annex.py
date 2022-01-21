@@ -29,6 +29,7 @@ from datalad.tests.utils import (
     rmtree,
     serve_path_via_http,
     skip_if_on_windows,
+    SkipTest,
     with_tempfile,
 )
 from datalad.utils import on_windows
@@ -330,3 +331,52 @@ def test_submodule_url(servepath, url, workdir):
     # we got the original subds
     subdsclone = Dataset(superclone.pathobj / 'subds')
     eq_(tobesubds.id, subdsclone.id)
+
+
+@with_tempfile
+@with_tempfile
+def test_webdav_auth(preppath, clnpath):
+    try:
+        from datalad_mihextras.tests.test_export_to_webdav import (
+            DAVClient,
+            cleanup_webdav,
+            webdav_cfg,
+            webdav_url_tmpl,
+        )
+    except ImportError as e:
+        raise SkipTest(f"WEBDAV test ingredients not available. Got: {e!r}")
+
+    # this is the dataset we want to roundtrip through webdav
+    ds = Dataset(preppath).create(annex=False)
+
+    # we only need this dav client for cleanup at the end of the test
+    # it does performs any preparation
+    webdav = DAVClient(webdav_cfg)
+
+    # dataset-specific location to no conflict with other tests
+    #   datalad-annex::https://dav.box.com/dav/datalad-tester/UUID?...
+    #     type=webdav&url={noquery}&encryption=none&dlacredential=boxcom
+    webdavurl = \
+        f'datalad-annex::{webdav_url_tmpl.format(id=ds.id)}' \
+        '?type=webdav&url={noquery}&encryption=none&dlacredential=boxcom'
+
+    ds.repo.call_git(['remote', 'add', 'dla', webdavurl])
+    # we are providing the credentials via the environment to avoid
+    # complictions with an actual credential store.
+    # importantly we use a different credential source than the one
+    # used by the testhelper
+    with patch.dict(
+            'os.environ',
+            {"DATALAD_CREDENTIAL_BOXCOM_USER":
+                webdav_cfg["webdav_login"],
+             "DATALAD_CREDENTIAL_BOXCOM_PASSWORD":
+                webdav_cfg["webdav_password"]}):
+        try:
+            # roundtrip
+            ds.repo.call_git(['push', 'dla'])
+            cln = clone(webdavurl, clnpath)
+            # must give the same thing
+            eq_(ds.repo.get_hexsha(DEFAULT_BRANCH),
+                cln.repo.get_hexsha(DEFAULT_BRANCH))
+        finally:
+            cleanup_webdav(webdav, ds.id)

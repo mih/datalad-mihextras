@@ -89,6 +89,25 @@ this::
         └── repo.zip
 
 
+Credential handling
+
+Some git-annex special remotes require the specification of credentials via
+environment variables. With the URL parameter ``dlacredential=<name>`` it
+is possible to query DataLad for a user/password credential to be used for
+this purpose. This convenience functionality is supported for the special
+remotes ``glacier``, ``s3``, and ``webdav``. Unfortunately, interactive
+credential entry on first use is not possible (because the remote helper
+is not connected to a terminal when it runs). A credential of the given
+name must already exist. Until DataLad provides a command to do this, it can
+be achieved with the following Python code snippet that can be executed
+on the command line::
+
+    python -c 'from datalad.downloaders.credentials import UserPassword; UserPassword(name="<NAME>")()'
+
+where ``<NAME>`` must be replaced with the desired credential name. Username
+and password can then be entered interactively.
+
+
 Implementation details
 
 This Git remote implementation uses *two* extra repositories, besides the
@@ -149,6 +168,7 @@ from urllib.parse import (
 
 from datalad.consts import PRE_INIT_COMMIT_SHA
 from datalad.core.local.repo import repo_from_path
+from datalad.downloaders.credentials import UserPassword
 from datalad.runner import (
     CommandError,
     NoCapture,
@@ -191,7 +211,26 @@ class RepoAnnexGitRemote(object):
     }
     # supported parameters that can come in via the URL, but must not
     # be relayed to `git annex initremote`
-    internal_parameters = ('dladotgit=uncompressed',)
+    internal_parameters = ('dladotgit=uncompressed', 'dlacredential=')
+
+    # mapping for credential properties for specific special remote
+    # types. this is unpleasantly non-generic, but only a small
+    # subset of git-annex special remotes require credentials to be
+    # given via ENV vars, and all of rclone's handle it internally
+    credential_env_map = dict(
+        # it makes no sense to pull a short-lived access token from
+        # a credential store, it can be given via AWS_SESSION_TOKEN
+        # in any case
+        glacier=dict(
+            user='AWS_ACCESS_KEY_ID',
+            password='AWS_SECRET_ACCESS_KEY'),
+        s3=dict(
+            user='AWS_ACCESS_KEY_ID',
+            password='AWS_SECRET_ACCESS_KEY'),
+        webdav=dict(
+            user='WEBDAV_USERNAME',
+            password='WEBDAV_PASSWORD'),
+    )
 
     def __init__(self,
                  gitdir,
@@ -220,6 +259,7 @@ class RepoAnnexGitRemote(object):
         self.repo = GitRepo(gitdir)
         # this is the key piece, take special remote params from
         # URL
+        # this function yields a type= parameter in any case
         self.initremote_params = get_initremote_params_from_url(url)
         self.remote_name = remote
         # internal logic relies on workdir to be an absolute path
@@ -246,6 +286,31 @@ class RepoAnnexGitRemote(object):
 
         # ID of the tree to export, if needed
         self.exporttree = None
+
+        self.credential_env = None
+        credential_name = [
+            p[14:] for p in self.initremote_params
+            if p.startswith('dlacredential=')
+        ]
+        if credential_name:
+            credential_name = credential_name[0]
+            remote_type = [
+                p[5:] for p in self.initremote_params
+                if p.startswith('type=')
+            ]
+            if remote_type[0] not in self.credential_env_map:
+                raise ValueError(
+                    "No known mapping for credential to environment variables "
+                    "for type={remote_type[0]} special remote.")
+            env_map = self.credential_env_map[remote_type[0]]
+            # prefer the environment to behave like git-annex, but if we do not
+            # have a complete credential set, go acquire one
+            if not all(k in os.environ for k in env_map.values()):
+                up_auth = UserPassword(name=credential_name)
+                self.credential_env = {
+                    v: os.environ.get(v, up_auth()[k])
+                    for k, v in env_map.items()
+                } if up_auth.is_known else None
 
     def _ensure_workdir(self):
         self.workdir.mkdir(parents=True, exist_ok=True)
@@ -317,12 +382,13 @@ class RepoAnnexGitRemote(object):
                     ])
             else:
                 # let git-annex-initremote take over
-                ra.call_annex(
-                    ['initremote', 'origin'] + [
-                        p for p in self.initremote_params
-                        if not any(p.startswith(ip)
-                                   for ip in self.internal_parameters)
-                    ])
+                with patch.dict('os.environ', self.credential_env or {}):
+                    ra.call_annex(
+                        ['initremote', 'origin'] + [
+                            p for p in self.initremote_params
+                            if not any(p.startswith(ip)
+                                       for ip in self.internal_parameters)
+                        ])
                 # make the new remote config known in the repo instance
                 ra.config.reload()
             if 'exporttree=yes' in self.initremote_params:
