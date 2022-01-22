@@ -1,0 +1,12 @@
+version: "2"
+plugins:
+  bandit:
+    enabled: true
+    checks:
+      assert_used:
+        enabled: false
+exclude_patterns:
+- "versioneer.py"
+- "*/_version.py"
+- "tools/"
+- "**/tests/"
