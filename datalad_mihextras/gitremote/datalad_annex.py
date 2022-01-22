@@ -107,6 +107,16 @@ fetch/push Git operations are performed locally between the repo (R) and
 repo (B). On push, repo (B) is then packed up again, and deposited on the
 remote site via git-annex transfer in repo (A).
 
+Due to a limitation of this implementation, it is possible that when the last
+upload step fails, Git nevertheless advances the pushed refs, making it appear
+as if the push was completely successful. That being said, Git will still issue
+a message (``error: failed to push some refs to..``) and the git-push process
+will also exit with a non-zero status. In addition, all of the remote's refs
+will be annotated with an additional ref named
+``refs/dlra-upload-failed/<remote-name>/<ref-name>`` to indicate the upload
+failure. These markers will be automatically removed after the next successful
+upload.
+
 .. note::
 
    Confirmed to work with git-annex version 8.20211123 onwards.
@@ -347,8 +357,19 @@ class RepoAnnexGitRemote(object):
 
         # ensure we have a mirror repo, either fresh or existing
         self._ensure_workdir()
-        existing_repo = GitRepo.is_valid(self._mirrorrepodir)
-        if existing_repo:
+        if not self.get_remote_refs():
+            existing_repo = False
+            # there is nothing at the remote, hence we must wipe
+            # out the local state, whatever it was to make git
+            # report subsequent pushes properly, and prevent
+            # "impossible" fetches
+            if self._mirrorrepodir.exists():
+                # if we extract, we cannot tollerate left-overs
+                rmtree(str(self._mirrorrepodir), ignore_errors=True)
+                # null the repohandle to be reconstructed later on-demand
+                self._mirrorrepo = None
+        elif GitRepo.is_valid(self._mirrorrepodir):
+            # so we have remote refs and we also have a local mirror
             # create an instance, assume it is set up how we need it
             # must also have bare=True, or the newly created one below
             # will inherit the config
@@ -358,10 +379,13 @@ class RepoAnnexGitRemote(object):
             self._mirrorrepo = mr
             # this will trigger a download if possible (remote has refs)
             self.replace_mirrorrepo_from_remote_deposit_if_needed()
-        elif self.get_remote_refs():
+            # reevaluate
+            existing_repo = GitRepo.is_valid(self._mirrorrepodir)
+        else:
             # we have nothing local, pull from the remote, because it
             # reports stuff to exist
             self.replace_mirrorrepo_from_remote_deposit()
+            existing_repo = True
 
         # (re-)create an instance
         mr = GitRepo(
@@ -429,52 +453,37 @@ class RepoAnnexGitRemote(object):
                     # the mirror is out-of-sync with the remote (could be a
                     # slightly more expensive test)
                     # we must upload it.
-                    # the bad thing is that we have no way of properly
-                    # signaling to git that this happended,
-                    # the refs for this remote will look as if the upload was
-                    # successfull
                     try:
                         self.replace_remote_deposit_from_mirrorrepo()
                     except Exception:
-                        # roll-back the refs in the repo and its mirror using
-                        # info in `pre_refs`
-                        self.log(
-                            'Remote update failed, rolling back mirror refs')
-                        for ref in pre_refs:
-                            self.mirrorrepo.call_git([
-                                'update-ref',
-                                ref['refname'],
-                                ref['objectname']])
-                            # SADLY, the recovery below has no effect, because
-                            # Git updates the remote refs only after this
-                            # helper exists. while this crash causes
-                            # 'error: failed to push some refs to'
-                            # and an exit 1
-                            # the remote refs in the underlying repo still look
-                            # like a success
-                            #self.repo.call_git([
-                            #    'update-ref',
-                            #    # strip 'refs/heads/' from refname
-                            #    f'refs/remotes/{self.remote_name}/{ref["refname"][11:]}',
-                            #    ref['objectname']])
+                        # the bad thing is that we have no way of properly
+                        # signaling to git that this happended,
+                        # the refs for this remote will look as if the upload
+                        # was successfull
+
+                        # we do not need to roll-back the refs in the
+                        # mirrorrepo as it will be rsync'ed to the remote on
+                        # next access
+                        self.log('Remote update failed, flagging refs',
+                                 post_refs)
+                        for ref in post_refs:
                             # best MIH can think of is to leave behind another
                             # ref to indicate the unsuccessful upload
                             self.repo.call_git([
                                 'update-ref',
                                 # strip 'refs/heads/' from refname
-                                f'refs/last-confirmed-state/{self.remote_name}/{ref["refname"][11:]}',
+                                f'refs/dlra-upload-failed/{self.remote_name}/'
+                                f'{ref["refname"][11:]}',
                                 ref['objectname']])
                         raise
 
-                # clean-up potential upload failure markers
-                # `update-ref -d` should be safe to run on non-existing refs
-                for ref in post_refs:
-                    self.repo.call_git([
-                        'update-ref',
-                        '-d',
-                        # strip 'refs/heads/' from refname
-                        f'refs/last-confirmed-state/{self.remote_name}/{ref["refname"][11:]}'
-                    ])
+                # clean-up potential upload failure markers for this particular
+                # remote. whatever has failed before, we just uploaded a mirror
+                # that was freshly sync'ed with the remote state before
+                for ref in self.repo.for_each_ref_(
+                        fields=('refname',),
+                        pattern=f'refs/dlra-upload-failed/{self.remote_name}'):
+                    self.repo.call_git(['update-ref', '-d', ref['refname']])
                 # we do not need to update `self._cached_remote_refs`,
                 # because we end the remote-helper process here
                 return

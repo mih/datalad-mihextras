@@ -124,8 +124,8 @@ def _check_push_fetch_cycle(ds, remoteurl, remotepath, localtargetpath):
         assert_raises(CommandError, dsrepo.call_git, ['push', 'dla'])
         # really bad that we cannot roll-back the remote branch state
         # from within the helper (see code), but we leave an indicator
-        eq_(dsrepo.get_hexsha(DEFAULT_BRANCH + '~1'),
-            dsrepo.get_hexsha(f'refs/last-confirmed-state/dla/{DEFAULT_BRANCH}'))
+        eq_(dsrepo.get_hexsha(DEFAULT_BRANCH),
+            dsrepo.get_hexsha(f'refs/dlra-upload-failed/dla/{DEFAULT_BRANCH}'))
 
         # revert read-only permission on the remote side
         for p in sorted(stat_records):
@@ -139,7 +139,7 @@ def _check_push_fetch_cycle(ds, remoteurl, remotepath, localtargetpath):
     assert_raises(
         ValueError,
         dsrepo.get_hexsha,
-        f'refs/last-confirmed-state/dla/{DEFAULT_BRANCH}')
+        f'refs/dlra-upload-failed/dla/{DEFAULT_BRANCH}')
 
     # the remote has received the new state
     eq_dla_branch_state(dsrepo.get_hexsha(DEFAULT_BRANCH), remotepath)
