@@ -20,7 +20,11 @@ Command(s) provided by this extension
   service, such as Nextcloud, box.com, or 4shared.com
 - `x-snakemake` -- thin wrapper around [SnakeMake](https://snakemake.github.io)
   to obtain file content prior processing
-
+- `git-remote-datalad-annex` -- Git remote helper to push/fetch to any
+  location accessible by any git-annex special remote.
+- `git-annex-backend-XDLRA` -- custom external git-annex backend used by
+  `git-remote-datalad-annex`. A base class to facilitate development of
+  external backends in Python is also provided.
 
 Dataset procedure(s) provided by this extension
 
