@@ -88,6 +88,9 @@ this::
         ├── refs
         └── repo.zip
 
+The default LZMA-compression of the ZIP file (in both export and normal mode)
+can be turned off with the ``dladotgit=uncompressed`` URL parameter.
+
 
 Credential handling
 
