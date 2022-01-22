@@ -170,6 +170,16 @@ def _check_push_fetch_cycle(ds, remoteurl, remotepath, localtargetpath):
     dsrepo.call_git(['pull', 'dla', DEFAULT_BRANCH])
     eq_(dsrepo.get_hexsha(DEFAULT_BRANCH), dsclonerepo.get_hexsha(DEFAULT_BRANCH))
 
+    # now create a non-heads ref and roundtrip that
+    # this is what metalad needs to push metadata refs
+    dsrepo.call_git([
+        'update-ref', 'refs/datalad/dummy', dsrepo.get_hexsha(DEFAULT_BRANCH)])
+    dsrepo.call_git(['push', 'dla', 'refs/datalad/dummy'])
+    dsclonerepo.call_git([
+        'fetch', DEFAULT_REMOTE, 'refs/datalad/dummy:refs/datalad/dummy'])
+    eq_(dsrepo.get_hexsha('refs/datalad/dummy'),
+        dsclonerepo.get_hexsha('refs/datalad/dummy'))
+
 
 @with_tempfile
 @with_tempfile(mkdir=True)
