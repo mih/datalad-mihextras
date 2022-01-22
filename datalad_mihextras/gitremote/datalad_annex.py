@@ -142,6 +142,13 @@ upload.
 
 .. todo::
 
+   - At the moment, only one format for repository deposition is supported
+     (a ZIP archive of a working bare repository). However this is not
+     a good format for the purpose of long-term archiving, because it
+     require a functional Git installation to work with. It would be fairly
+     doable to make the deposited format configurable, and support additional
+     formats. An interesting one would be a fast-export stream, basically
+     a plain text serialization of an entire repository.
    - recognize that a different repo is being pushed over an existing
      one at the remote
    - think about adding additional information into the header of `refs`
