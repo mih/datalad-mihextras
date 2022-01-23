@@ -206,6 +206,71 @@ class ExportToWEBDAV(Interface):
                     **res_kwargs)
 
 
+def _guess_export_target(known_special_remotes):
+    # no target given, guess
+    webdav_cands = [
+        sr['name']
+        for sr in known_special_remotes.values()
+        if sr.get('type') == 'webdav' and sr.get('exporttree') == 'yes'
+    ]
+    if len(webdav_cands) == 1:
+        # a single webdav special remote with enabled export found,
+        # this must be it
+        return webdav_cands[0]
+    elif len(webdav_cands) > 1:
+        raise ValueError(
+            'No WEBDAV target given, and multiple candidates are '
+            'available: {}'.format(webdav_cands))
+
+
+def _use_existing_remote(remote, remote_name, check_url=None):
+    if not (remote.get('type') == 'webdav' and \
+            remote.get('exporttree') == 'yes'):
+        raise ValueError(
+            "Special remote '{}' is not of WEBDAV type or lacks "
+            "exporttree configuration, unusable".format(remote_name))
+    # we have a properly configured `to`
+    if check_url and not remote.get('url') == check_url:
+        raise ValueError(
+            "A special remote '{}' already exists, but with a "
+            "different URL ({}) than the given one".format(
+                remote_name, remote.get('url')))
+    # for getting credentials
+    url = remote.get('url')
+    return url
+
+
+def _verify_existing_remote(repo, remote_name, export_treeish):
+    # inspect the availability of keys relevant for the export
+    # at the remote
+    try:
+        lgr.debug('Perform annex fsck on export target %s', remote_name)
+        for res in repo.call_annex_records([
+                'fsck',
+                # only check presence
+                '--fast',
+                '--branch', export_treeish,
+                '--from', remote_name]):
+            # we are not much interested in when things are as expected
+            lgr.debug('%s', res)
+    except CommandError as e:
+        # say something about the failures
+        for res in (r for r in e.kwargs.get('stdout_json', [])
+                    if not r.get('success')):
+            # no need to warn, we are doing the check to avoid the
+            # unexpected
+            lgr.info(
+                '%s: %s',
+                # should be 'fixing location log', but if not
+                # say who is talking
+                res.get('note', 'git-annex'),
+                ' '.join(m.strip(' *')
+                         # should say which key in errors
+                         # but if not dump everything
+                         for m in res.get('error-messages', [res]))
+            )
+
+
 def export_to_webdav(ds, to, url=None, mode='auto'):
     """ """
     repo = ds.repo
@@ -216,25 +281,12 @@ def export_to_webdav(ds, to, url=None, mode='auto'):
     known_special_remotes = repo.get_special_remotes()
     if to is None:
         lgr.debug('No WEBDAV export target given, trying to guess')
-        # no target given, guess
-        webdav_cands = [
-            sr['name']
-            for sr in known_special_remotes.values()
-            if sr.get('type') == 'webdav' and sr.get('exporttree') == 'yes'
-        ]
-        if len(webdav_cands) == 1:
-            # a single webdav special remote with enabled export found,
-            # this must be it
-            to = webdav_cands[0]
-            lgr.debug("Using preconfigured WEBDAV target '%s'", to)
-        elif len(webdav_cands) > 1:
-            raise ValueError(
-                'No WEBDAV target given, and multiple candidates are '
-                'available: {}'.format(webdav_cands))
-
+        to = _guess_export_target(known_special_remotes)
     if to is None:
         raise ValueError(
             'No WEBDAV target given, and none could be auto-determined')
+    else:
+        lgr.debug("Using preconfigured WEBDAV target '%s'", to)
 
     creds = None
 
@@ -246,51 +298,10 @@ def export_to_webdav(ds, to, url=None, mode='auto'):
             raise RuntimeError(
                 "Found more than one special remote with name '{}'".format(
                     to))
-        msr = matching_special_remote[0]
-        if not (msr.get('type') == 'webdav' and \
-                msr.get('exporttree') == 'yes'):
-            raise ValueError(
-                "Special remote '{}' is not of WEBDAV type or lacks "
-                "exporttree configuration, unusable".format(to))
-        # we have a properly configured `to`
-        if url and not msr.get('url') == url:
-            raise ValueError(
-                "A special remote '{}' already exists, but with a "
-                "different URL ({}) than the given one".format(
-                    to, msr.get('url')))
-        # for getting credentials
-        url = msr.get('url')
-
+        url = _use_existing_remote(
+            matching_special_remote[0], to, check_url=url)
         if mode == 'verify':
-            # inspect the availability of keys relevant for the export
-            # at the remote
-            try:
-                lgr.debug('Perform annex fsck on export target %s', to)
-                for res in repo.call_annex_records([
-                        'fsck',
-                        # only check presence
-                        '--fast',
-                        '--branch', export_treeish,
-                        '--from', to]):
-                    # we are not much interested in when things are as expected
-                    lgr.debug('%s', res)
-            except CommandError as e:
-                for res in e.kwargs.get('stdout_json', []):
-                    if res.get('success'):
-                        # nothing to say about the good ones
-                        continue
-                    # no need to warn, we are doing the check to avoid the
-                    # unexpected
-                    lgr.info(
-                        '%s: %s',
-                        # should be 'fixing location log', but if not
-                        # say who is talking
-                        res.get('note', 'git-annex'),
-                        ' '.join(m.strip(' *')
-                                 # should say which key in errors
-                                 # but if not dump everything
-                                 for m in res.get('error-messages', [res]))
-                    )
+            _verify_existing_remote(repo, to, export_treeish)
     else:
         if not url:
             raise ValueError(
@@ -310,23 +321,11 @@ def export_to_webdav(ds, to, url=None, mode='auto'):
     try:
         from unittest.mock import patch
         with patch.dict('os.environ', creds or get_credentials(to, url)):
-            for res in repo.call_annex_records(export_cmd):
-                # https://github.com/datalad/datalad/issues/5490
-                if res.get('file', False) is None:
-                    res.pop('file')
-                res = annexjson2result(res, ds=ds)
-                res['action'] = 'export_to_webdav'
-                res['type'] = 'file'
-                yield res
+            yield from _yield_res_from_annexres(
+                ds, repo.call_annex_records(export_cmd))
     except CommandError as e:
-        for res in e.kwargs.get('stdout_json', []):
-            # https://github.com/datalad/datalad/issues/5490
-            if res.get('file', False) is None:
-                res.pop('file')
-            res = annexjson2result(res, ds=ds)
-            res['action'] = 'export_to_webdav'
-            res['type'] = 'file'
-            yield res
+        yield from _yield_res_from_annexres(
+            ds, e.kwargs.get('stdout_json', []))
         yield get_status_dict(
             status='error',
             message='export failed',
@@ -336,6 +335,23 @@ def export_to_webdav(ds, to, url=None, mode='auto'):
     yield get_status_dict(
         status='ok',
         **return_props)
+
+
+def _yield_res_from_annexres(ds, annexres):
+    """Internal helper
+
+    Parameters
+    ----------
+    annexres : iterable
+    """
+    for res in annexres:
+        # https://github.com/datalad/datalad/issues/5490
+        if res.get('file', False) is None:
+            res.pop('file')
+        res = annexjson2result(res, ds=ds)
+        res['action'] = 'export_to_webdav'
+        res['type'] = 'file'
+        yield res
 
 
 def _init_remote(repo, name, url, creds):
