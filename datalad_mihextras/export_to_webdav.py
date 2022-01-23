@@ -313,7 +313,8 @@ def export_to_webdav(ds, to, url=None, mode='auto'):
             yield from _yield_res_from_annexres(
                 ds, repo.call_annex_records(export_cmd))
     except CommandError as e:
-        yield from _yield_res_from_annexres(e.kwargs.get('stdout_json', []))
+        yield from _yield_res_from_annexres(
+            ds, e.kwargs.get('stdout_json', []))
         yield get_status_dict(
             status='error',
             message='export failed',
@@ -325,7 +326,7 @@ def export_to_webdav(ds, to, url=None, mode='auto'):
         **return_props)
 
 
-def _yield_res_from_annexres(annexres):
+def _yield_res_from_annexres(ds, annexres):
     """Internal helper
 
     Parameters
