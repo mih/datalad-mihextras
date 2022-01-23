@@ -1,4 +1,8 @@
 version: "2"
+checks:
+  file-lines:
+    config:
+      threshold: 500
 plugins:
   bandit:
     enabled: true
