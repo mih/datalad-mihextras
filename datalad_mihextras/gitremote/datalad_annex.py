@@ -438,8 +438,8 @@ class RepoAnnexGitRemote(object):
                 "and 'exporttree' parameters")
         baseurl = baseurl[0][4:]
         for key, kinfo in self.xdlra_key_locations.items():
-            repoannex.call_git([
-                'annex', 'registerurl',
+            repoannex.call_annex([
+                'registerurl',
                 key,
                 f'{baseurl}/{kinfo["loc"]}'
                 if 'exporttree=yes' in self.initremote_params else
