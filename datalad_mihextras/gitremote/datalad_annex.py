@@ -297,30 +297,50 @@ class RepoAnnexGitRemote(object):
         # ID of the tree to export, if needed
         self.exporttree = None
 
-        self.credential_env = None
+        self.credential_env = self._get_credential_env()
+
+    def _get_credential_env(self):
+        """
+        Returns
+        -------
+        dict or None
+          A dict with all required items to patch the environment, or None
+          if not enough information is available.
+
+        Raises
+        ------
+        ValueError
+          If a credential retrieval is requested for an unsupported special
+          remote type.
+        """
         credential_name = [
             p[14:] for p in self.initremote_params
             if p.startswith('dlacredential=')
         ]
-        if credential_name:
-            credential_name = credential_name[0]
-            remote_type = [
-                p[5:] for p in self.initremote_params
-                if p.startswith('type=')
-            ]
-            if remote_type[0] not in self.credential_env_map:
-                raise ValueError(
-                    "No known mapping for credential to environment variables "
-                    "for type={remote_type[0]} special remote.")
-            env_map = self.credential_env_map[remote_type[0]]
-            # prefer the environment to behave like git-annex, but if we do not
-            # have a complete credential set, go acquire one
-            if not all(k in os.environ for k in env_map.values()):
-                up_auth = UserPassword(name=credential_name)
-                self.credential_env = {
-                    v: os.environ.get(v, up_auth()[k])
-                    for k, v in env_map.items()
-                } if up_auth.is_known else None
+        if not credential_name:
+            return
+
+        credential_name = credential_name[0]
+        remote_type = [
+            p[5:] for p in self.initremote_params
+            if p.startswith('type=')
+        ]
+        if remote_type[0] not in self.credential_env_map:
+            raise ValueError(
+                "No known mapping for credential to environment variables "
+                "for type={remote_type[0]} special remote.")
+        env_map = self.credential_env_map[remote_type[0]]
+        # prefer the environment to behave like git-annex, but if we do not
+        # have a complete credential set, go acquire one
+        if not all(k in os.environ for k in env_map.values()):
+            up_auth = UserPassword(name=credential_name)
+            if not up_auth.is_known:
+                # nothing we can do, no terminal attached
+                return
+            return {
+                v: os.environ.get(v, up_auth()[k])
+                for k, v in env_map.items()
+            }
 
     def _ensure_workdir(self):
         self.workdir.mkdir(parents=True, exist_ok=True)
