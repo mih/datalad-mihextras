@@ -386,30 +386,7 @@ class RepoAnnexGitRemote(object):
             ra.call_git(['annex', 'init'])
             ra = AnnexRepo(self._repoannexdir)
             if 'type=web' in self.initremote_params:
-                # for type=web we have to add URLs by hand
-                baseurl = [
-                    v for v in self.initremote_params
-                    if v.startswith('url=')]
-                if not len(baseurl) == 1:
-                    raise ValueError(
-                        "'web'-type remote requires 'url' parameter")
-                # validate the rest of the params, essentially there
-                # must not be any other
-                if not all(p in ('type=web', 'exporttree=yes')
-                           or p.startswith('url=')
-                        for p in self.initremote_params):
-                    raise ValueError(
-                        "'web'-type remote only supports 'url' "
-                        "and 'exporttree' parameters")
-                baseurl = baseurl[0][4:]
-                for key, kinfo in self.xdlra_key_locations.items():
-                    ra.call_git([
-                        'annex', 'registerurl',
-                        key,
-                        f'{baseurl}/{kinfo["loc"]}'
-                        if 'exporttree=yes' in self.initremote_params else
-                        f'{baseurl}/{kinfo["prefix"]}/{key}/{key}'
-                    ])
+                self._init_repoannex_type_web(ra)
             else:
                 # let git-annex-initremote take over
                 with patch.dict('os.environ', self.credential_env or {}):
@@ -434,6 +411,40 @@ class RepoAnnexGitRemote(object):
 
         self._repoannex = ra
         return ra
+
+    def _init_repoannex_type_web(self, repoannex):
+        """Uses registerurl to utilize the omnipresent type=web remote
+
+        Raises
+        ------
+        ValueError
+          When there is no `url=` parameter or when there are other
+          parameters than the additional `type=web` and `exporttree=yes`,
+          indicating an unsupported setup.
+        """
+        # for type=web we have to add URLs by hand
+        baseurl = [
+            v for v in self.initremote_params
+            if v.startswith('url=')]
+        if not len(baseurl) == 1:
+            raise ValueError(
+                "'web'-type remote requires 'url' parameter")
+        # validate the rest of the params, essentially there
+        # must not be any other
+        if not all(p in ('type=web', 'exporttree=yes') or p.startswith('url=')
+                   for p in self.initremote_params):
+            raise ValueError(
+                "'web'-type remote only supports 'url' "
+                "and 'exporttree' parameters")
+        baseurl = baseurl[0][4:]
+        for key, kinfo in self.xdlra_key_locations.items():
+            repoannex.call_annex([
+                'registerurl',
+                key,
+                f'{baseurl}/{kinfo["loc"]}'
+                if 'exporttree=yes' in self.initremote_params else
+                f'{baseurl}/{kinfo["prefix"]}/{key}/{key}'
+            ])
 
     @property
     def mirrorrepo(self):
