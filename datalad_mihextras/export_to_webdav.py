@@ -310,23 +310,10 @@ def export_to_webdav(ds, to, url=None, mode='auto'):
     try:
         from unittest.mock import patch
         with patch.dict('os.environ', creds or get_credentials(to, url)):
-            for res in repo.call_annex_records(export_cmd):
-                # https://github.com/datalad/datalad/issues/5490
-                if res.get('file', False) is None:
-                    res.pop('file')
-                res = annexjson2result(res, ds=ds)
-                res['action'] = 'export_to_webdav'
-                res['type'] = 'file'
-                yield res
+            yield from _yield_res_from_annexres(
+                ds, repo.call_annex_records(export_cmd))
     except CommandError as e:
-        for res in e.kwargs.get('stdout_json', []):
-            # https://github.com/datalad/datalad/issues/5490
-            if res.get('file', False) is None:
-                res.pop('file')
-            res = annexjson2result(res, ds=ds)
-            res['action'] = 'export_to_webdav'
-            res['type'] = 'file'
-            yield res
+        yield from _yield_res_from_annexres(e.kwargs.get('stdout_json', []))
         yield get_status_dict(
             status='error',
             message='export failed',
@@ -336,6 +323,23 @@ def export_to_webdav(ds, to, url=None, mode='auto'):
     yield get_status_dict(
         status='ok',
         **return_props)
+
+
+def _yield_res_from_annexres(annexres):
+    """Internal helper
+
+    Parameters
+    ----------
+    annexres : iterable
+    """
+    for res in annexres:
+        # https://github.com/datalad/datalad/issues/5490
+        if res.get('file', False) is None:
+            res.pop('file')
+        res = annexjson2result(res, ds=ds)
+        res['action'] = 'export_to_webdav'
+        res['type'] = 'file'
+        yield res
 
 
 def _init_remote(repo, name, url, creds):
