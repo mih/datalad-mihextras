@@ -162,6 +162,7 @@ install:
   - sh: "[ -n \"${INSTALL_GITANNEX}\" ] && datalad-installer -E ${HOME}/dlinstaller_env.sh --sudo ok ${INSTALL_GITANNEX}"
   # add location of datalad installer results to PATH
   - sh: "[ -f ${HOME}/dlinstaller_env.sh ] && . ${HOME}/dlinstaller_env.sh || true"
+  - python -c "from pathlib import Path; import site; p = Path(site.USER_SITE); p.mkdir(exist_ok=True, parents=True); (p / \"dlsubproccov.pth\").write_text(\"import coverage; coverage.process_startup()\n\")"
 
 
 #before_build:
