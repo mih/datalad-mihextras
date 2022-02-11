@@ -34,6 +34,12 @@ command_suite = (
             'x-export-bagit',
             'x_export_bagit'
         ),
+        (
+            'datalad_mihextras.record_reproducibility',
+            'RecordReproducibility',
+            'x-record-reproducibility',
+            'x_record_reproducibility',
+        ),
     ]
 )
 
