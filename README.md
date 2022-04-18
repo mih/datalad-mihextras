@@ -12,8 +12,6 @@ topical extensions or even DataLad proper.
 
 Command(s) provided by this extension
 
-- `x-configuration` -- manipulate dataset, dataset-clone-local, or global
-  configuration, or dump an annotated list of all effective settings
 - `x-export-bagit` -- export datasets (recursively) to an RFC8493-compliant
   BagIt "bag"
 - `x-export-to-webdav` -- export datasets (recursively) to any WEBDAV
@@ -31,3 +29,8 @@ Dataset procedure(s) provided by this extension
 - `cfg_kdenlive` -- configures a dataset for use as a KDENLIVE project.
   Manages commits of the project file to be more portable, and configures
   a standard set of temporary directories for KDENLIVE.
+
+Once available functionality
+
+- `x-configuration` has been migrated to the core DataLad package under the name
+  `configuration`.
