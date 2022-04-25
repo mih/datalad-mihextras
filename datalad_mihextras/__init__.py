@@ -11,12 +11,6 @@ command_suite = (
     [
         # specification of a command, any number of commands can be defined
         (
-            'datalad_mihextras.export_to_webdav',
-            'ExportToWEBDAV',
-            'x-export-to-webdav',
-            'x_export_to_webdav'
-        ),
-        (
             'datalad_mihextras.snakemake',
             'SnakeMake',
             'x-snakemake',

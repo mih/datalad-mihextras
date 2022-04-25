@@ -14,15 +14,8 @@ Command(s) provided by this extension
 
 - `x-export-bagit` -- export datasets (recursively) to an RFC8493-compliant
   BagIt "bag"
-- `x-export-to-webdav` -- export datasets (recursively) to any WEBDAV
-  service, such as Nextcloud, box.com, or 4shared.com
 - `x-snakemake` -- thin wrapper around [SnakeMake](https://snakemake.github.io)
   to obtain file content prior processing
-- `git-remote-datalad-annex` -- Git remote helper to push/fetch to any
-  location accessible by any git-annex special remote.
-- `git-annex-backend-XDLRA` -- custom external git-annex backend used by
-  `git-remote-datalad-annex`. A base class to facilitate development of
-  external backends in Python is also provided.
 
 Dataset procedure(s) provided by this extension
 
@@ -34,3 +27,12 @@ Once available functionality
 
 - `x-configuration` has been migrated to the core DataLad package under the name
   `configuration`.
+- `git-remote-datalad-annex` -- has been migrated to an improved implementation
+  provided by https://github.com/datalad/datalad-next
+- `git-annex-backend-XDLRA`, and the base class to facilitate development of
+  external backends in Python -- has been migrated to an improved implementation
+  provided by https://github.com/datalad/datalad-next
+- `x-export-to-webdav` -- is discontinued. https://github.com/datalad/datalad-next
+  provides `create-sibling-webdav` (supports export remotes) and enhances the
+  standard `push` command to be able to handle exports automatically. This
+  removed the need for a custom implementation.

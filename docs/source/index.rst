@@ -16,7 +16,6 @@ High-level API commands
    :toctree: generated
 
    x_export_bagit
-   x_export_to_webdav
    x_snakemake
 
 
@@ -27,28 +26,8 @@ Command line reference
    :maxdepth: 1
 
    generated/man/datalad-x-export-bagit
-   generated/man/datalad-x-export-to-webdav
    generated/man/datalad-x-snakemake
 
-
-Git remote helpers
-------------------
-
-.. currentmodule:: datalad_mihextras.gitremote
-.. autosummary::
-   :toctree: generated
-
-   datalad_annex
-
-Git-annex backends
-------------------
-
-.. currentmodule:: datalad_mihextras.backend
-.. autosummary::
-   :toctree: generated
-
-   base
-   xdlra
 
 Indices and tables
 ==================
