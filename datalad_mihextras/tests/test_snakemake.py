@@ -13,7 +13,7 @@ from datalad.api import clone
 from datalad.distribution.dataset import Dataset
 from datalad.utils import chpwd
 
-from datalad.tests.utils import (
+from datalad.tests.utils_pytest import (
     assert_status,
     eq_,
     nok_,
@@ -45,7 +45,7 @@ rule test:
 @with_tree(tree={'Snakefile': snakefile,
                  'test_input.txt': 'random string 123'})
 @with_tempfile()
-def test_snakemake_fileget(origpath, clonepath):
+def test_snakemake_fileget(origpath=None, clonepath=None):
     ds = Dataset(origpath).create(force=True)
     assert_status('ok', ds.save(path='Snakefile', to_git=True))
     assert_status('ok', ds.save(path='test_input.txt', to_git=False))
