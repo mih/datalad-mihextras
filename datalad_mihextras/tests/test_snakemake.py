@@ -10,20 +10,20 @@
 
 """
 from datalad.api import clone
-from datalad.distribution.dataset import Dataset
-from datalad.utils import chpwd
+from datalad_next.datasets import Dataset
+from datalad_next.utils import chpwd
 
-from datalad.tests.utils import (
+from datalad_next.tests.utils import (
+    SkipTest,
     assert_status,
-    eq_,
-    nok_,
-    skip_if_no_module,
-    with_tempfile,
-    with_tree,
 )
 
 # no point in testing without snakemake
-skip_if_no_module('snakemake')
+try:
+    import snakemake
+except ImportError as e:
+    raise SkipTest('No snakemake installed') from e
+
 
 # ensure we have the snakemake dataset method
 from datalad_mihextras.snakemake import SnakeMake
@@ -42,21 +42,22 @@ rule test:
 """
 
 
-@with_tree(tree={'Snakefile': snakefile,
-                 'test_input.txt': 'random string 123'})
-@with_tempfile()
-def test_snakemake_fileget(origpath, clonepath):
+def test_snakemake_fileget(tmp_path):
+    origpath = tmp_path / 'orig'
+    origpath.mkdir()
+    (origpath / 'Snakefile').write_text(snakefile)
+    (origpath / 'test_input.txt').write_text('random string 123')
     ds = Dataset(origpath).create(force=True)
     assert_status('ok', ds.save(path='Snakefile', to_git=True))
     assert_status('ok', ds.save(path='test_input.txt', to_git=False))
 
-    cln = clone(origpath, clonepath)
+    cln = clone(origpath, tmp_path / 'clone')
     # from datalad 0.16 onwards it could be
-    #nok_(cln.repo.get_file_annexinfo(
-    #    'test_input.txt', eval_availability=True)['has_content'])
-    nok_(cln.repo.file_has_content('test_input.txt'))
+    assert not cln.repo.get_file_annexinfo(
+        'test_input.txt',
+        eval_availability=True)['has_content']
 
     with chpwd(cln.path):
         cln.snakemake(['--', '-c1'])
 
-    eq_((cln.pathobj / "test_output.txt").read_text(), 'random string 123')
+    assert (cln.pathobj / "test_output.txt").read_text() == 'random string 123'
