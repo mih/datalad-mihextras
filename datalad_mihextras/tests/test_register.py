@@ -1,5 +1,3 @@
-from datalad.tests.utils import assert_status
-
 
 def test_register():
     import datalad.api as da
