@@ -176,16 +176,14 @@ def _get_key_urls(repo, rstatus):
 
     lgr.info('Get whereis')
     # and now, only for annex repos, ask for URLs
-    arecs = repo._call_annex([
-        'whereis',
-        # doesn't hurt
-        '--fast',
-        '--batch-keys',
-        "--format=${key}\t${url}\n",
-        # we know the worktree is clean,
-        # but maybe we can avoid a few filesystem ops
-        '--branch', 'HEAD'],
-        stdin=all_annex_keys)
+    arecs = repo._call_annex(
+        ['whereis',
+         # doesn't hurt
+         '--fast',
+         '--batch-keys',
+         "--format=${key}\t${url}\n"],
+        stdin=all_annex_keys,
+    )
 
     lgr.info('Map keys to URLs')
     key_urls = {}
