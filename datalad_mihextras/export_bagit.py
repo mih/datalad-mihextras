@@ -23,12 +23,12 @@ from shutil import copyfile
 
 from datalad.distribution.dataset import (
     EnsureDataset,
-    datasetmethod,
     require_dataset,
 )
-from datalad.interface.base import (
+from datalad_next.commands import (
     Interface,
     build_doc,
+    datasetmethod,
 )
 from datalad.interface.common_opts import (
     recursion_limit,

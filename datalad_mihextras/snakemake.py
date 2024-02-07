@@ -16,23 +16,24 @@ from argparse import (
     REMAINDER,
 )
 
-from datalad.interface.base import Interface
-from datalad.interface.utils import eval_results
-from datalad.interface.base import build_doc
-from datalad.support.constraints import (
+from datalad_next.commands import (
+    Interface,
+    Parameter,
+    eval_results,
+    build_doc,
+    datasetmethod,
+)
+from datalad_next.constraints import (
     EnsureNone,
 )
-from datalad.support.param import Parameter
 from datalad.distribution.dataset import (
     require_dataset,
 )
-from datalad.utils import (
+from datalad_next.utils import (
     ensure_list,
 )
-
 from datalad.distribution.dataset import (
     EnsureDataset,
-    datasetmethod,
 )
 
 lgr = logging.getLogger('datalad.local.snakemake')
