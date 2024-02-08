@@ -1,7 +1,7 @@
 # MIH's extra DataLad functionality
 
 [![Build status](https://ci.appveyor.com/api/projects/status/f65qpwkv2rueii1d/branch/main?svg=true)](https://ci.appveyor.com/project/mih/datalad-mihextras/branch/main)
-[![codecov.io](https://codecov.io/github/mih/datalad-mihextras/coverage.svg?branch=main)](https://codecov.io/github/mih/datalad-mihextras?branch=main)
+[![codecov](https://codecov.io/github/mih/datalad-mihextras/graph/badge.svg?token=bfZTqJAYRV)](https://codecov.io/github/mih/datalad-mihextras)
 [![docs](https://github.com/mih/datalad-mihextras/workflows/docs/badge.svg)](https://datalad-mihextras.readthedocs.io)
 
 DataLad extension with special interest functionality or drafts of future
