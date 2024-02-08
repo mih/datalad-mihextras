@@ -17,30 +17,26 @@ from argparse import (
 )
 
 from datalad_next.commands import (
-    Interface,
+    EnsureCommandParameterization,
+    ValidatedInterface,
     Parameter,
     eval_results,
     build_doc,
     datasetmethod,
 )
-from datalad_next.constraints import (
-    EnsureNone,
-)
-from datalad.distribution.dataset import (
-    require_dataset,
+# TODO migrate to block above with datalad-next >v1.2
+from datalad_next.constraints.dataset import (
+    EnsureDataset,
 )
 from datalad_next.utils import (
     ensure_list,
-)
-from datalad.distribution.dataset import (
-    EnsureDataset,
 )
 
 lgr = logging.getLogger('datalad.local.snakemake')
 
 
 @build_doc
-class SnakeMake(Interface):
+class SnakeMake(ValidatedInterface):
     """Thin wrapper around SnakeMake to obtain file content prior processing
 
     When snakemake is called through this wrapper, it is patched to use
@@ -53,14 +49,20 @@ class SnakeMake(Interface):
             # not really needed on the cmdline, but for PY to resolve relative
             # paths
             args=("-d", "--dataset"),
-            doc="""""",
-            constraints=EnsureDataset() | EnsureNone()),
+            doc=""""""),
         smargs=Parameter(
             args=("smargs",),
             metavar='SNAKEMAKE ARGUMENTS',
             nargs=REMAINDER,
             doc="""Start with '--' before any snakemake argument to ensure
             such arguments are not processed by DataLad."""),
+    )
+
+    _validator_ = EnsureCommandParameterization(
+        param_constraints=dict(
+            dataset=EnsureDataset(installed=True),
+        ),
+        validate_defaults=('dataset',),
     )
 
     @staticmethod
@@ -81,8 +83,7 @@ class SnakeMake(Interface):
         sm_argv.extend(sm_args)
 
         # we need to inject a dataset handle into snakemake
-        ds = require_dataset(dataset, check_installed=True,
-                             purpose='snakemake data IO')
+        ds = dataset.ds
 
         # import the patches for snakemake
         from .snakemake_monkeypatch import DataLadSnakeMakeIOFile
