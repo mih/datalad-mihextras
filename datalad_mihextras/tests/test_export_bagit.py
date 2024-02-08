@@ -12,7 +12,8 @@ def test_export_bagit(no_result_rendering, existing_dataset, tmp_path):
         fileurl,
         '--file', 'loc.jpg'],
         cwd=ds.pathobj,
-        capture_output=True,
+        # would need datalad-next >1.2
+        #capture_output=True,
     )
     ds.save()
     ds.x_export_bagit(tmp_path)
