@@ -17,7 +17,7 @@
 
 import sys
 from pathlib import Path
-from datalad.api import Dataset
+from datalad_next.datasets import Dataset
 
 ds = Dataset(sys.argv[1])
 

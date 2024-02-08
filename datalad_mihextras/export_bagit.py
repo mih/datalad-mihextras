@@ -21,38 +21,39 @@ from pathlib import (
 )
 from shutil import copyfile
 
-from datalad.distribution.dataset import (
-    EnsureDataset,
-    datasetmethod,
-    require_dataset,
-)
-from datalad.interface.base import (
-    Interface,
-    build_doc,
-)
 from datalad.interface.common_opts import (
     recursion_limit,
     recursion_flag,
 )
-from datalad.interface.results import (
+
+from datalad_next.commands import (
+    EnsureCommandParameterization,
+    ValidatedInterface,
+    Parameter,
+    build_doc,
+    datasetmethod,
+    eval_results,
     get_status_dict,
 )
-from datalad.interface.utils import (
-    eval_results,
-)
-from datalad.support.param import Parameter
-from datalad.support.constraints import (
+from datalad_next.constraints import (
     EnsureChoice,
     EnsureNone,
+    EnsurePath,
     EnsureStr,
+)
+# TODO migrate to block above with datalad-next >v1.2
+from datalad_next.constraints.dataset import (
+    EnsureDataset,
 )
 
 
 lgr = logging.getLogger('datalad.mihextras.export_bagit')
 
+archive_format_choices = ('tar', 'tgz', 'bz2', 'zip')
+
 
 @build_doc
-class ExportBagit(Interface):
+class ExportBagit(ValidatedInterface):
     """Export a dataset to a Bag-it
 
     This is a proof-of-principle implementation that can export a DataLad
@@ -85,8 +86,7 @@ class ExportBagit(Interface):
     _params_ = dict(
         dataset=Parameter(
             args=("-d", "--dataset"),
-            doc="""specify the dataset to export""",
-            constraints=EnsureDataset() | EnsureNone()),
+            doc="""specify the dataset to export"""),
         to=Parameter(
             args=("to",),
             metavar='PATH',
@@ -97,9 +97,18 @@ class ExportBagit(Interface):
         archive=Parameter(
             args=("--archive", ),
             doc="""export bag as a single-file archive in the given format""",
-            constraints=EnsureChoice('tar', 'tgz', 'bz2', 'zip', None)),
+            choices=archive_format_choices),
         recursive=recursion_flag,
         recursion_limit=recursion_limit,
+    )
+
+    _validator_ = EnsureCommandParameterization(
+        param_constraints=dict(
+            archive=EnsureChoice(*archive_format_choices),
+            dataset=EnsureDataset(installed=True),
+            to=EnsurePath(),
+        ),
+        validate_defaults=('dataset',),
     )
 
     @staticmethod
@@ -112,10 +121,7 @@ class ExportBagit(Interface):
             recursive=False,
             recursion_limit=None):
 
-        ds = require_dataset(
-            dataset,
-            check_installed=True,
-            purpose='exporting to BagIt')
+        ds = dataset.ds
 
         res_kwargs = dict(
             action='export_bagit',
@@ -135,7 +141,6 @@ class ExportBagit(Interface):
                 )
             )
 
-        to = Path(to)
         if not to.exists():
             to.mkdir(exist_ok=True, parents=True)
 
@@ -176,16 +181,14 @@ def _get_key_urls(repo, rstatus):
 
     lgr.info('Get whereis')
     # and now, only for annex repos, ask for URLs
-    arecs = repo._call_annex([
-        'whereis',
-        # doesn't hurt
-        '--fast',
-        '--batch-keys',
-        "--format=${key}\t${url}\n",
-        # we know the worktree is clean,
-        # but maybe we can avoid a few filesystem ops
-        '--branch', 'HEAD'],
-        stdin=all_annex_keys)
+    arecs = repo._call_annex(
+        ['whereis',
+         # doesn't hurt
+         '--fast',
+         '--batch-keys',
+         "--format=${key}\t${url}\n"],
+        stdin=all_annex_keys,
+    )
 
     lgr.info('Map keys to URLs')
     key_urls = {}
